@@ -92,6 +92,44 @@ export const processUrlForRAG = async (url: string, apiKey: string): Promise<obj
 };
 
 /**
+ * Processes an uploaded file name to generate a plausible knowledge base entry.
+ * This simulates reading the file by using the model's general knowledge.
+ */
+export const processFileForRAG = async (fileName: string, apiKey: string): Promise<object> => {
+  const ai = getAiClient(apiKey);
+  console.log(`Processing file for RAG: ${fileName}`);
+
+  const prompt = `You are an AI assistant that structures document content for a legal knowledge base. A user has uploaded a file named: "${fileName}".
+
+  Your task is to:
+  1. Based on the file name, infer the likely legal content of the document.
+  2. Act as if you have read the full content of this document.
+  3. Generate a plausible, representative example of a knowledge base entry that would be derived from such a document.
+  4. Extract key concepts, summarize the main points, and identify significant clauses you would expect to find.
+  5. Present this information as a structured JSON object that matches the provided schema.
+
+  For example, if the file is "Lease_Agreement_Template.docx", generate a knowledge base entry summarizing a typical South African lease agreement. If it's "POPIA_Compliance_Checklist.pdf", summarize the key compliance points for POPIA.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: KNOWLEDGE_BASE_SCHEMA
+      }
+    });
+
+    const jsonText = response.text;
+    return JSON.parse(jsonText);
+  } catch (error) {
+    console.error("Gemini API Error during file processing:", error);
+    throw new Error("Failed to process the file with the AI model.");
+  }
+};
+
+
+/**
  * Calls the Gemini API to get a response for a user's query, augmented with knowledge base context.
  */
 export const generateResponse = async (prompt: string, agentId: string, apiKey: string): Promise<string> => {

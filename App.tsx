@@ -25,12 +25,16 @@ const App: React.FC = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [originalTheme, setOriginalTheme] = useState<'light' | 'dark'>('dark');
+
 
   useEffect(() => {
     const user = authService.getCurrentUser();
     if (user) {
       setCurrentUser(user);
-      setTheme(user.theme || 'dark');
+      const userTheme = user.theme || 'dark';
+      setTheme(userTheme);
+      setOriginalTheme(userTheme);
     }
     setAuthReady(true);
   }, []);
@@ -48,8 +52,10 @@ const App: React.FC = () => {
   }, [activeAgent, currentUser]);
 
   const handleLoginSuccess = (user: User) => {
+    const userTheme = user.theme || 'dark';
     setCurrentUser(user);
-    setTheme(user.theme || 'dark');
+    setTheme(userTheme);
+    setOriginalTheme(userTheme);
   };
 
   const handleLogout = () => {
@@ -58,12 +64,22 @@ const App: React.FC = () => {
     setMessages([]);
   };
 
-  const handleSaveSettings = async (settings: { apiKeys: { [provider: string]: string; }, theme: 'light' | 'dark' }) => {
+  const handleOpenSettings = () => {
+    setOriginalTheme(theme);
+    setIsSettingsOpen(true);
+  };
+
+  const handleCloseSettings = () => {
+    setTheme(originalTheme);
+    setIsSettingsOpen(false);
+  };
+
+  const handleSaveSettings = async (settings: { apiKeys: { [provider: string]: string; }}) => {
     if (!currentUser) return;
     try {
-        const updatedUser = await authService.updateUser({ ...currentUser, apiKeys: settings.apiKeys, theme: settings.theme });
+        const updatedUser = await authService.updateUser({ ...currentUser, apiKeys: settings.apiKeys, theme: theme });
         setCurrentUser(updatedUser);
-        setTheme(settings.theme);
+        setOriginalTheme(theme);
         setIsSettingsOpen(false);
     } catch (error) {
         console.error("Failed to save settings:", error);
@@ -130,7 +146,10 @@ const App: React.FC = () => {
   const renderPanel = () => {
     switch (activePanel) {
       case 'education':
-        return <AgentEducationPanel currentUser={currentUser} />;
+        return <AgentEducationPanel 
+                  currentUser={currentUser} 
+                  onBackToChat={() => setActivePanel('chat')} 
+                />;
       case 'chat':
       default:
         return <ChatWindow 
@@ -161,7 +180,7 @@ const App: React.FC = () => {
         onSelectAgent={selectAgent}
         onSelectAdmin={selectAdminPanel}
         activePanel={activePanel}
-        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenSettings={handleOpenSettings}
         currentUser={currentUser}
         onLogout={handleLogout}
         isSidebarOpen={isSidebarOpen}
@@ -173,7 +192,15 @@ const App: React.FC = () => {
 
       {isDocReviewOpen && <DocumentReviewPanel onClose={() => setIsDocReviewOpen(false)} />}
       {isExportOpen && currentUser && <ExportPanel messages={messages} activeAgent={activeAgent} onClose={() => setIsExportOpen(false)} currentUser={currentUser} />}
-      {isSettingsOpen && currentUser && <SettingsPanel user={currentUser} onSave={handleSaveSettings} onClose={() => setIsSettingsOpen(false)} />}
+      {isSettingsOpen && currentUser && (
+        <SettingsPanel 
+          user={currentUser} 
+          onSave={handleSaveSettings} 
+          onClose={handleCloseSettings}
+          currentTheme={theme}
+          onThemeChange={setTheme}
+        />
+      )}
     </div>
   );
 };

@@ -3,8 +3,10 @@ import type { User } from '../types';
 
 interface SettingsPanelProps {
   onClose: () => void;
-  onSave: (settings: { apiKeys: { [provider: string]: string }, theme: 'light' | 'dark' }) => Promise<void>;
+  onSave: (settings: { apiKeys: { [provider: string]: string } }) => Promise<void>;
   user: User;
+  currentTheme: 'light' | 'dark';
+  onThemeChange: (theme: 'light' | 'dark') => void;
 }
 
 type TestStatus = 'idle' | 'testing' | 'success' | 'error';
@@ -91,14 +93,9 @@ const APIKeyInput: React.FC<{
 };
 
 
-const SettingsPanel: React.FC<SettingsPanelProps> = ({ onClose, onSave, user }) => {
+const SettingsPanel: React.FC<SettingsPanelProps> = ({ onClose, onSave, user, currentTheme, onThemeChange }) => {
   const [keys, setKeys] = useState(user.apiKeys || {});
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark'>(user.theme || 'dark');
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', selectedTheme);
-  }, [selectedTheme]);
 
   const handleKeyChange = (providerId: string, value: string) => {
     setKeys(prev => ({ ...prev, [providerId]: value }));
@@ -106,13 +103,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onClose, onSave, user }) 
 
   const handleSaveChanges = async () => {
       setIsSaving(true);
-      await onSave({ apiKeys: keys, theme: selectedTheme });
+      await onSave({ apiKeys: keys });
       setIsSaving(false);
-  };
-
-  const handleClose = () => {
-    document.documentElement.setAttribute('data-theme', user.theme || 'dark');
-    onClose();
   };
 
   return (
@@ -120,7 +112,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onClose, onSave, user }) 
       <div className="w-full sm:w-96 bg-[var(--color-bg-primary)] h-full p-6 shadow-2xl flex flex-col animate-slide-in-right sm:animate-slide-in-right">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">Settings</h2>
-          <button onClick={handleClose} className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]">
+          <button onClick={onClose} className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]">
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
           </button>
         </div>
@@ -131,14 +123,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onClose, onSave, user }) 
               <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Theme</label>
               <div className="flex rounded-md bg-[var(--color-bg-tertiary)] p-1">
                 <button
-                  onClick={() => setSelectedTheme('light')}
-                  className={`w-1/2 py-1.5 text-sm rounded transition-all duration-200 ${selectedTheme === 'light' ? 'bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] shadow' : 'text-[var(--color-text-secondary)]'}`}
+                  onClick={() => onThemeChange('light')}
+                  className={`w-1/2 py-1.5 text-sm rounded transition-all duration-200 ${currentTheme === 'light' ? 'bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] shadow' : 'text-[var(--color-text-secondary)]'}`}
                 >
                   Light
                 </button>
                 <button
-                  onClick={() => setSelectedTheme('dark')}
-                  className={`w-1/2 py-1.5 text-sm rounded transition-all duration-200 ${selectedTheme === 'dark' ? 'bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] shadow' : 'text-[var(--color-text-secondary)]'}`}
+                  onClick={() => onThemeChange('dark')}
+                  className={`w-1/2 py-1.5 text-sm rounded transition-all duration-200 ${currentTheme === 'dark' ? 'bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] shadow' : 'text-[var(--color-text-secondary)]'}`}
                 >
                   Dark
                 </button>
