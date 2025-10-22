@@ -1,74 +1,114 @@
+import { GoogleGenAI, Type } from "@google/genai";
 
-import { GoogleGenAI } from "@google/genai";
-
-// This is a placeholder for the real API key which should be in process.env.API_KEY
-// In this frontend-only example, we'll proceed as if it's available.
-const FAKE_API_KEY = "YOUR_API_KEY_HERE";
-
+// The API key is expected to be available in the environment variables.
 let ai: GoogleGenAI;
 try {
-  // We initialize it here to follow the pattern, but the mock function won't use it.
-  ai = new GoogleGenAI({ apiKey: process.env.API_KEY || FAKE_API_KEY });
+  ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 } catch (error) {
-  console.warn("Gemini AI SDK initialization failed. Using mock data.", error);
+  console.error("Failed to initialize GoogleGenAI. Make sure API_KEY is set in the environment.", error);
 }
 
-const MOCK_RESPONSES: { [key: string]: string[] } = {
-  popia: [
-    "According to POPIA (Protection of Personal Information Act), an email address is considered personal information as it can be used to identify an individual. (POPIA, Act 4 of 2013, Section 1). Therefore, it must be handled with care.",
-    "The Act defines 'personal information' broadly. It includes contact details like email and phone numbers, demographic information, and personal history. Always obtain consent before processing such data. (POPIA, Act 4 of 2013, Section 11).",
-    "Under POPIA, you have the right to request access to your personal information held by a company. They are obligated to provide it to you. (POPIA, Act 4 of 2013, Section 23)."
-  ],
-  rental: [
-    "A landlord is generally required to give a tenant 'reasonable notice' before entering the property, except in emergencies. This is typically specified in the lease agreement. (Rental Housing Act 50 of 1999, Section 4).",
-    "The termination clause in your lease agreement is crucial. It should outline the notice period required by both parties. Typically, for a month-to-month lease, a full calendar month's notice is standard. I can help you analyze the specific wording if you upload it.",
-    "Your security deposit should be held in an interest-bearing account by the landlord. Upon termination of the lease, the landlord must refund the deposit, plus interest, minus any costs for damages beyond normal wear and tear. (Rental Housing Act 50 of 1999, Section 5)."
-  ],
-  consumer: [
-    "The Consumer Protection Act (CPA) gives you the right to return defective goods within six months of purchase for a refund, repair, or replacement. (CPA, Act 68 of 2008, Section 56).",
-    "If you received unsolicited goods or services, you are generally not obligated to pay for them. The CPA protects you from such 'negative option marketing'. (CPA, Act 68 of 2008, Section 21).",
-    "Contracts must be in plain and understandable language. Any term that is excessively one-sided or unfair may be challenged under the CPA. (CPA, Act 68 of 2008, Section 22)."
-  ],
-  general: [
-    "I can provide general information, but for specific legal advice, it's always best to consult with a qualified legal professional. Would you like me to direct you to the POPIA, Rental, or Consumer Protection agent?",
-    "That's an interesting question. To give you the most accurate information, could you tell me if this relates more to consumer rights, rental agreements, or data privacy?",
-    "I can help triage your query. Based on what you've asked, it seems related to contract law. The Consumer Protection Agent might be able to assist further."
-  ]
-};
-
-const getRandomResponse = (agentId: string): string => {
-  const responses = MOCK_RESPONSES[agentId] || MOCK_RESPONSES.general;
-  return responses[Math.floor(Math.random() * responses.length)];
+const KNOWLEDGE_BASE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    summary: {
+      type: Type.STRING,
+      description: 'A concise summary of the document\'s purpose and key contents.'
+    },
+    key_concepts: {
+      type: Type.ARRAY,
+      description: 'A list of important legal terms or concepts found in the document.',
+      items: { type: Type.STRING }
+    },
+    relevant_clauses: {
+      type: Type.ARRAY,
+      description: 'An array of objects, each representing a significant clause or section.',
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          title: {
+            type: Type.STRING,
+            description: 'The title or heading of the clause.'
+          },
+          text: {
+            type: Type.STRING,
+            description: 'The full text of the clause.'
+          }
+        },
+        required: ['title', 'text']
+      }
+    }
+  },
+  required: ['summary', 'key_concepts', 'relevant_clauses']
 };
 
 /**
- * Mocks a call to the Gemini API to get a response for a user's query.
- * In a real application, this would use `ai.models.generateContent`.
+ * Processes a URL to extract legal information and structure it for a knowledge base.
+ * This simulates RAG by asking the model to act as if it has fetched the URL content.
  */
-export const generateResponse = (prompt: string, agentId: string): Promise<string> => {
-  console.log(`Mocking Gemini call for agent "${agentId}" with prompt: "${prompt}"`);
-  
-  // This simulates the async nature of an API call
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const response = getRandomResponse(agentId);
-      resolve(response);
-    }, 1000 + Math.random() * 1000); // Simulate network latency
-  });
-
-  /*
-  // EXAMPLE OF A REAL IMPLEMENTATION
+export const processUrlForRAG = async (url: string): Promise<object> => {
   if (!ai) {
-     return Promise.reject("Gemini AI SDK not initialized.");
+    throw new Error("Gemini AI SDK not initialized. Is the API_KEY configured?");
   }
-  return ai.models.generateContent({
+  console.log(`Processing URL for RAG: ${url}`);
+  
+  const prompt = `You are an AI assistant that structures web content for a legal knowledge base. A user has submitted this URL: ${url}.
+
+  Your task is to:
+  1. Act as if you have fetched and read the content from this URL.
+  2. Analyze its content for legal information.
+  3. Extract key concepts, summarize the main points, and identify significant clauses.
+  4. Present this information as a structured JSON object that matches the provided schema.
+
+  If the URL seems invalid or you cannot hypothetically access it, create a plausible example of a knowledge base entry based on what the URL *should* contain. For example, if the URL is 'gov.za/acts/rental-housing-act', generate a summary of that act.`;
+
+  try {
+    const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `SYSTEM PROMPT: You are the ${agentId} AI Agent... \n\n USER: ${prompt}`
-  }).then(response => {
-      return response.text;
-  }).catch(error => {
-      console.error("Gemini API Error:", error);
-      throw new Error("Failed to communicate with the AI model.");
-  });
-  */
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: KNOWLEDGE_BASE_SCHEMA
+      }
+    });
+
+    const jsonText = response.text;
+    return JSON.parse(jsonText);
+  } catch (error) {
+    console.error("Gemini API Error during URL processing:", error);
+    throw new Error("Failed to process the URL with the AI model.");
+  }
+};
+
+/**
+ * Calls the Gemini API to get a response for a user's query.
+ */
+export const generateResponse = async (prompt: string, agentId: string): Promise<string> => {
+  if (!ai) {
+    throw new Error("Gemini AI SDK not initialized. Is the API_KEY configured?");
+  }
+  console.log(`Calling Gemini for agent "${agentId}" with prompt: "${prompt}"`);
+
+  const systemPrompts: { [key: string]: string } = {
+    popia: "You are an expert AI legal assistant specializing in South Africa's Protection of Personal Information Act (POPIA). Provide clear, accurate, and concise answers based on the act. Reference specific sections where possible.",
+    rental: "You are an expert AI legal assistant specializing in South Africa's rental housing law, including the Rental Housing Act. Provide clear, practical advice for tenants and landlords. Reference specific sections of the act where relevant.",
+    consumer: "You are an expert AI legal assistant specializing in South Africa's Consumer Protection Act (CPA). Help users understand their rights and obligations as consumers. Reference specific sections of the act when applicable.",
+    general: "You are a general AI legal assistant for South African law. Your role is to provide high-level information and direct users to the appropriate specialized agent (POPIA, Rental Law, Consumer Protection) if their query falls into one of those categories."
+  };
+  
+  const systemInstruction = systemPrompts[agentId] || systemPrompts.general;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        systemInstruction: systemInstruction,
+      }
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+    throw new Error("Failed to communicate with the AI model.");
+  }
 };
