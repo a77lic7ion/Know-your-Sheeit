@@ -143,7 +143,24 @@ const AgentEducationPanel: React.FC<AgentEducationPanelProps> = ({ currentUser, 
     };
     
     await knowledgeBaseService.addKnowledgeEntry(newEntry);
-    setKnowledgeBase(await knowledgeBaseService.getKnowledgeBase()); // Refresh state
+    
+    // Update local state directly instead of refetching
+    setKnowledgeBase(prevKB => {
+        const updatedAgentEntries = [...(prevKB[selectedAgentId] || [])];
+        const existingEntryIndex = updatedAgentEntries.findIndex(entry => entry.url === newEntry.url);
+
+        if (existingEntryIndex !== -1) {
+            updatedAgentEntries[existingEntryIndex] = newEntry;
+        } else {
+            updatedAgentEntries.push(newEntry);
+        }
+        
+        return {
+            ...prevKB,
+            [selectedAgentId]: updatedAgentEntries
+        };
+    });
+
     setKnowledgeBasePreview(null);
     setProcessedItem(null);
     setSuccessMessage("Knowledge base approved and added successfully!");
