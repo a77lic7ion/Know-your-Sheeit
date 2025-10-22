@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Know Your Sheeeit - AI Legal Assistant",
+  "description": "A multi-agent AI legal assistant for South Africa, providing answers from a structured knowledge base using Retrieval-Augmented Generation (RAG). Features include agent education, document review, and chat-based interaction.",
+  "requestFramePermissions": []
+}
