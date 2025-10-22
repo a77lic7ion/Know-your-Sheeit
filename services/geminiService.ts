@@ -1,4 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import * as knowledgeBaseService from './knowledgeBaseService';
+import type { KnowledgeEntry } from "../types";
 
 /**
  * Creates and returns an initialized GoogleGenAI client.
@@ -90,11 +92,27 @@ export const processUrlForRAG = async (url: string, apiKey: string): Promise<obj
 };
 
 /**
- * Calls the Gemini API to get a response for a user's query.
+ * Calls the Gemini API to get a response for a user's query, augmented with knowledge base context.
  */
 export const generateResponse = async (prompt: string, agentId: string, apiKey: string): Promise<string> => {
   const ai = getAiClient(apiKey);
   console.log(`Calling Gemini for agent "${agentId}" with prompt: "${prompt}"`);
+
+  // RAG: Retrieve knowledge for the agent
+  const agentKnowledge = knowledgeBaseService.getKnowledgeForAgent(agentId);
+  let knowledgeContext = "No specific knowledge base context available for this query.";
+  
+  if (agentKnowledge.length > 0) {
+    knowledgeContext = "Based on the following approved knowledge base, answer the user's question.\n\n" +
+      "--- KNOWLEDGE BASE START ---\n\n" +
+      agentKnowledge.map((entry: KnowledgeEntry, index: number) => {
+        return `Source ${index + 1} (from ${entry.url}):\n` +
+               `Summary: ${entry.content.summary}\n` +
+               `Key Concepts: ${entry.content.key_concepts.join(', ')}\n` +
+               `Relevant Clauses:\n${entry.content.relevant_clauses.map(c => `- ${c.title}: ${c.text}`).join('\n')}`;
+      }).join('\n\n---\n\n') +
+      "\n\n--- KNOWLEDGE BASE END ---";
+  }
 
   const systemPrompts: { [key: string]: string } = {
     popia: "You are an expert AI legal assistant specializing in South Africa's Protection of Personal Information Act (POPIA). Provide clear, accurate, and concise answers based on the act. Reference specific sections where possible.",
@@ -104,11 +122,13 @@ export const generateResponse = async (prompt: string, agentId: string, apiKey: 
   };
   
   const systemInstruction = systemPrompts[agentId] || systemPrompts.general;
+  
+  const finalPrompt = `${knowledgeContext}\n\nUser Question: ${prompt}`;
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: prompt,
+      contents: finalPrompt,
       config: {
         systemInstruction: systemInstruction,
       }
