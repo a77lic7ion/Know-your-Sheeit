@@ -93,7 +93,7 @@ const AgentEducationPanel: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full bg-[#0D1117] text-gray-300 p-8">
+    <div className="flex h-full bg-[#0D1117] text-gray-300 p-4 sm:p-8 overflow-y-auto">
       <div className="flex-1 max-w-7xl mx-auto">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-white">Agent Education</h1>
@@ -137,7 +137,7 @@ const AgentEducationPanel: React.FC = () => {
 
             <div className="bg-[#161B22] border border-gray-700 rounded-lg p-6">
                 <h3 className="font-semibold text-white mb-4">Enter a URL</h3>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                     <input 
                         type="text" 
                         placeholder="https://example.com/legal-document" 
@@ -148,7 +148,7 @@ const AgentEducationPanel: React.FC = () => {
                         disabled={isProcessing}
                     />
                     <button 
-                        className="bg-cyan-600 text-white px-6 py-2 rounded-md hover:bg-cyan-500 disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center w-28"
+                        className="bg-cyan-600 text-white px-6 py-2 rounded-md hover:bg-cyan-500 disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center sm:w-28"
                         onClick={handleUrlSubmit}
                         disabled={isProcessing || !urlInput.trim()}
                     >
@@ -179,7 +179,7 @@ const AgentEducationPanel: React.FC = () => {
                       <tbody>
                         {uploadedItems.map((item) => (
                           <tr key={item.id} className="border-b border-gray-700 hover:bg-[#21262D]">
-                            <th scope="row" className="px-4 py-4 font-medium text-white whitespace-nowrap flex items-center max-w-xs">
+                            <th scope="row" className="px-4 py-4 font-medium text-white whitespace-nowrap flex items-center max-w-xs sm:max-w-sm md:max-w-md">
                               {item.type === 'url' ? (
                                 <svg className="w-5 h-5 mr-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
                               ) : (
@@ -218,18 +218,18 @@ const AgentEducationPanel: React.FC = () => {
 
           {/* Right Column */}
           <div className="space-y-6">
-            <div className="bg-[#161B22] border border-gray-700 rounded-lg p-6 h-full flex flex-col">
+            <div className="bg-[#161B22] border border-gray-700 rounded-lg p-6 h-full flex flex-col min-h-[400px] lg:min-h-0">
               <h3 className="font-semibold text-white mb-4">Generated Knowledge Base Preview</h3>
               <div className="bg-[#0D1117] rounded-md p-4 flex-1 overflow-auto">
                 {knowledgeBasePreview ? (
                   <pre className={`text-xs whitespace-pre-wrap ${error ? 'text-red-400' : 'text-green-300'}`}>{JSON.stringify(knowledgeBasePreview, null, 2)}</pre>
                 ) : (
-                   <div className="flex items-center justify-center h-full text-gray-500">
+                   <div className="flex items-center justify-center h-full text-gray-500 text-center">
                     <p>{isProcessing ? 'Generating knowledge base...' : 'Submit a URL to see the generated knowledge base.'}</p>
                    </div>
                 )}
               </div>
-              <div className="flex gap-4 mt-6">
+              <div className="flex flex-col sm:flex-row gap-4 mt-6">
                 <button className="flex-1 bg-green-600 text-white py-2.5 rounded-md hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed" disabled={!knowledgeBasePreview || !!error}>Approve Knowledge Base</button>
                 <button className="flex-1 bg-red-600 text-white py-2.5 rounded-md hover:bg-red-500 disabled:bg-gray-600 disabled:cursor-not-allowed" disabled={!knowledgeBasePreview}>Reject Knowledge Base</button>
               </div>

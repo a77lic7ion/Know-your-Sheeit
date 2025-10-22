@@ -118,9 +118,9 @@ const ExportPanel: React.FC<ExportPanelProps> = ({ onClose, messages, activeAgen
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#161B22] rounded-lg shadow-2xl w-full max-w-3xl flex overflow-hidden max-h-[90vh]">
+      <div className="bg-[#161B22] rounded-lg shadow-2xl w-full max-w-4xl flex flex-col md:flex-row overflow-hidden max-h-[90vh]">
         {/* Left Side */}
-        <div className="w-1/3 bg-[#0D1117] p-6 flex flex-col border-r border-gray-700">
+        <div className="w-full md:w-1/3 bg-[#0D1117] p-6 flex flex-col border-b md:border-b-0 md:border-r border-gray-700">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold">Export Conversation</h2>
             <button onClick={onClose} className="text-gray-400 hover:text-white">
@@ -135,9 +135,9 @@ const ExportPanel: React.FC<ExportPanelProps> = ({ onClose, messages, activeAgen
           {renderMainButton()}
         </div>
         {/* Right Side */}
-        <div className="w-2/3 p-6 flex flex-col">
-          <h3 className="font-semibold text-lg mb-4">Preview</h3>
-          <div className="flex-1 bg-gray-800 rounded-lg flex items-center justify-center border border-gray-700 p-2">
+        <div className="w-full md:w-2/3 p-6 flex flex-col overflow-y-auto">
+          <h3 className="font-semibold text-lg mb-4 flex-shrink-0">Preview</h3>
+          <div className="flex-1 bg-gray-800 rounded-lg flex items-center justify-center border border-gray-700 p-2 min-h-[200px] md:min-h-0">
              {isLoading ? (
                 <div className="text-center text-gray-400 flex flex-col items-center">
                     <svg className="animate-spin h-8 w-8 text-cyan-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -155,7 +155,7 @@ const ExportPanel: React.FC<ExportPanelProps> = ({ onClose, messages, activeAgen
                 />
              )}
           </div>
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-4 flex-shrink-0">
             <h3 className="font-semibold text-lg">Settings</h3>
             <Toggle label="Include timestamps" icon={<svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>} defaultChecked={true} />
             <Toggle label="Add watermark" icon={<svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>} />

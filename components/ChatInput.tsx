@@ -31,9 +31,9 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isThinking }) => {
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center space-x-2 mb-3">
+      <div className="flex items-center flex-wrap gap-2 mb-3">
         {suggestions.map((text) => (
-            <button key={text} onClick={() => onSendMessage(text)} className="px-3 py-1.5 bg-gray-800 text-gray-300 text-sm rounded-lg hover:bg-gray-700 transition-colors">
+            <button key={text} onClick={() => onSendMessage(text)} disabled={isThinking} className="px-3 py-1.5 bg-gray-800 text-gray-300 text-sm rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 {text}
             </button>
         ))}
@@ -49,7 +49,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isThinking }) => {
           disabled={isThinking}
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-2">
-            <button className="text-gray-400 hover:text-white">
+            <button className="text-gray-400 hover:text-white disabled:opacity-50" disabled={isThinking}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
             </button>
             <button onClick={handleSend} disabled={isThinking || !inputValue.trim()} className="bg-cyan-600 text-white p-2 rounded-lg hover:bg-cyan-500 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors">

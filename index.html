@@ -26,9 +26,29 @@
       }
       body {
         font-family: var(--font-sans);
+        overflow-x: hidden;
       }
       pre, code, textarea {
         font-family: var(--font-mono);
+      }
+      .tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-bottom: 8px;
+        padding: 4px 8px;
+        background-color: #1f2937;
+        color: white;
+        font-size: 12px;
+        border-radius: 4px;
+        opacity: 0;
+        transition: opacity 0.2s;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+      .group:hover .tooltip {
+        opacity: 1;
       }
     </style>
   <script type="importmap">

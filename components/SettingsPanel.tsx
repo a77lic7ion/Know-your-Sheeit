@@ -108,7 +108,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onClose, onSave, user }) 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-end z-50">
-      <div className="w-96 bg-[#161B22] h-full p-6 shadow-2xl flex flex-col animate-slide-in">
+      <div className="w-full sm:w-96 bg-[#161B22] h-full p-6 shadow-2xl flex flex-col animate-slide-in-right sm:animate-slide-in-right">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold">Settings</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white">
@@ -139,11 +139,11 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onClose, onSave, user }) 
         </button>
       </div>
       <style>{`
-        @keyframes slide-in {
+        @keyframes slide-in-right {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
         }
-        .animate-slide-in { animation: slide-in 0.3s ease-out forwards; }
+        .animate-slide-in-right { animation: slide-in-right 0.3s ease-out forwards; }
       `}</style>
     </div>
   );

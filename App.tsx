@@ -17,13 +17,14 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
-  const [activeAgent, setActiveAgent] = useState<Agent>(AGENTS[1]);
+  const [activeAgent, setActiveAgent] = useState<Agent>(AGENTS[0]);
   const [messages, setMessages] = useState<Message[]>([]);
   
   const [isDocReviewOpen, setIsDocReviewOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const user = authService.getCurrentUser();
@@ -98,6 +99,12 @@ const App: React.FC = () => {
   const selectAgent = (agent: Agent) => {
     setActiveAgent(agent);
     setActivePanel('chat');
+    setIsSidebarOpen(false); // Close sidebar on selection
+  }
+
+  const selectAdminPanel = () => {
+    setActivePanel('education');
+    setIsSidebarOpen(false); // Close sidebar on selection
   }
 
   const renderPanel = () => {
@@ -113,6 +120,7 @@ const App: React.FC = () => {
                   isThinking={isThinking}
                   onOpenDocReview={() => setIsDocReviewOpen(true)}
                   onOpenExport={() => setIsExportOpen(true)}
+                  onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
                 />;
     }
   };
@@ -126,18 +134,20 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-[#0D1117] font-sans">
+    <div className="flex h-screen bg-[#0D1117] font-sans overflow-hidden">
       <Sidebar 
         agents={AGENTS} 
         activeAgent={activeAgent} 
         onSelectAgent={selectAgent}
-        onSelectAdmin={() => setActivePanel('education')}
+        onSelectAdmin={selectAdminPanel}
         activePanel={activePanel}
         onOpenSettings={() => setIsSettingsOpen(true)}
         currentUser={currentUser}
         onLogout={handleLogout}
+        isSidebarOpen={isSidebarOpen}
+        onCloseSidebar={() => setIsSidebarOpen(false)}
       />
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col lg:ml-64">
         {renderPanel()}
       </main>
 
