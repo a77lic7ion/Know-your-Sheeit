@@ -6,10 +6,10 @@ import { UserIcon } from '../constants';
 
 interface MessageBubbleProps {
   message: Message;
-  agentIcon: React.ComponentType<{ className?: string }>;
+  agentIcon: string;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message, agentIcon: AgentIcon }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message, agentIcon }) => {
   const isUser = message.sender === MessageSender.USER;
 
   const wrapperClasses = isUser ? "flex justify-end" : "flex justify-start";
@@ -17,17 +17,16 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, agentIcon: Agent
     ? "bg-gray-700 text-white rounded-lg"
     : "bg-[#21262D] text-gray-300 rounded-lg";
   
-  const Icon = isUser ? UserIcon : AgentIcon;
   const iconWrapperClasses = isUser ? "ml-3" : "mr-3";
   const iconClasses = isUser 
     ? "w-8 h-8 p-1 bg-gray-600 rounded-full"
-    : "w-8 h-8 p-1 bg-gray-700 text-cyan-400 rounded-full";
+    : "w-8 h-8 p-1 bg-gray-700 rounded-full object-cover";
 
   const content = (
     <>
       {!isUser && (
         <div className={`${iconWrapperClasses} self-start`}>
-          <Icon className={iconClasses} />
+          <img src={agentIcon} alt="Agent" className={iconClasses} />
         </div>
       )}
       <div className={`max-w-xl px-4 py-3 ${bubbleClasses}`}>
@@ -35,7 +34,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, agentIcon: Agent
       </div>
       {isUser && (
         <div className={`${iconWrapperClasses} self-start`}>
-          <Icon className={iconClasses} />
+          <UserIcon className={iconClasses} />
         </div>
       )}
     </>

@@ -14,6 +14,39 @@ const saveUsers = (users: User[]) => {
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
 };
 
+export const updateUser = (updatedUser: User): Promise<User> => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+        const users = getUsers();
+        const userIndex = users.findIndex(u => u.email === updatedUser.email);
+        if (userIndex === -1) {
+          return reject(new Error('User not found.'));
+        }
+        const currentUser = users[userIndex];
+        users[userIndex] = { ...currentUser, ...updatedUser };
+        saveUsers(users);
+        
+        const localSession = localStorage.getItem(LOCAL_SESSION_KEY);
+        if (localSession) {
+            const sessionUser = JSON.parse(localSession);
+            if (sessionUser.email === updatedUser.email) {
+                localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(users[userIndex]));
+            }
+        }
+        
+        const tempSession = sessionStorage.getItem(TEMP_SESSION_KEY);
+        if (tempSession) {
+            const sessionUser = JSON.parse(tempSession);
+            if (sessionUser.email === updatedUser.email) {
+                sessionStorage.setItem(TEMP_SESSION_KEY, JSON.stringify(users[userIndex]));
+            }
+        }
+    
+        resolve(users[userIndex]);
+    }, 200);
+  });
+};
+
 export const register = (email: string, password: string): Promise<User> => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -24,7 +57,7 @@ export const register = (email: string, password: string): Promise<User> => {
       if (users.some(user => user.email === email)) {
         return reject(new Error('User with this email already exists.'));
       }
-      const newUser: User = { email };
+      const newUser: User = { email, apiKeys: {} };
       saveUsers([...users, newUser]);
       // After registration, create a temporary session
       localStorage.removeItem(LOCAL_SESSION_KEY);

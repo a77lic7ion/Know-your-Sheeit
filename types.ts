@@ -1,4 +1,3 @@
-// Fix: Import ComponentType from react
 import type { ComponentType } from 'react';
 
 export enum MessageSender {
@@ -17,12 +16,35 @@ export interface Agent {
   name: string;
   shortName: string;
   description: string;
-  // Fix: Use ComponentType directly
-  icon: ComponentType<{ className?: string }>;
+  icon: string; // Changed from ComponentType to string for image URIs
+  theme: { [key: string]: string };
 }
 
 export type PanelType = 'dashboard' | 'education' | 'chat';
 
 export interface User {
   email: string;
+  apiKeys?: {
+    [provider: string]: string;
+  };
+}
+
+// New types for the shared knowledge base
+export interface KnowledgeEntryContent {
+  summary: string;
+  key_concepts: string[];
+  relevant_clauses: { title: string; text: string }[];
+}
+
+export interface KnowledgeEntry {
+  id: string;
+  agentId: string;
+  url: string;
+  content: KnowledgeEntryContent;
+  approvedBy: string;
+  approvedAt: string;
+}
+
+export interface KnowledgeBase {
+  [agentId: string]: KnowledgeEntry[];
 }

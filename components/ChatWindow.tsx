@@ -26,7 +26,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ activeAgent, messages, onSendMe
     <div className="flex flex-col h-full bg-[#0D1117]">
       <header className="flex items-center justify-between p-4 border-b border-gray-700 sticky top-0 bg-[#0D1117]/80 backdrop-blur-sm">
         <div className="flex items-center">
-            <activeAgent.icon className="w-6 h-6 mr-3 text-cyan-400" />
+            <img src={activeAgent.icon} alt={activeAgent.name} className="w-6 h-6 mr-3 rounded-md object-cover" />
             <h2 className="text-xl font-semibold">{activeAgent.name}</h2>
         </div>
         <div className="flex items-center space-x-4">
@@ -43,7 +43,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ activeAgent, messages, onSendMe
         {isThinking && (
           <div className="flex justify-start">
             <div className="flex items-center space-x-2">
-              <activeAgent.icon className="w-8 h-8 p-1 bg-gray-700 text-cyan-400 rounded-full" />
+              <img src={activeAgent.icon} alt={activeAgent.name} className="w-8 h-8 p-1 bg-gray-700 rounded-full object-cover" />
               <div className="bg-[#21262D] rounded-lg px-4 py-2 flex items-center">
                 <span className="text-gray-400 animate-pulse">Typing</span>
                 <span className="animate-bounce text-gray-400 ml-1">.</span>

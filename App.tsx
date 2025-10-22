@@ -9,6 +9,7 @@ import AgentEducationPanel from './components/AgentEducationPanel';
 import DocumentReviewPanel from './components/DocumentReviewPanel';
 import ExportPanel from './components/ExportPanel';
 import Auth from './components/Auth';
+import SettingsPanel from './components/SettingsPanel';
 import { generateResponse } from './services/geminiService';
 import * as authService from './services/authService';
 
@@ -21,6 +22,7 @@ const App: React.FC = () => {
   
   const [isDocReviewOpen, setIsDocReviewOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
 
   useEffect(() => {
@@ -47,6 +49,17 @@ const App: React.FC = () => {
     authService.logout();
     setCurrentUser(null);
     setMessages([]);
+  };
+
+  const handleSaveSettings = async (apiKeys: { [provider: string]: string; }) => {
+    if (!currentUser) return;
+    try {
+        const updatedUser = await authService.updateUser({ ...currentUser, apiKeys });
+        setCurrentUser(updatedUser);
+        setIsSettingsOpen(false);
+    } catch (error) {
+        console.error("Failed to save settings:", error);
+    }
   };
 
   const handleSendMessage = useCallback(async (text: string) => {
@@ -120,6 +133,7 @@ const App: React.FC = () => {
         onSelectAgent={selectAgent}
         onSelectAdmin={() => setActivePanel('education')}
         activePanel={activePanel}
+        onOpenSettings={() => setIsSettingsOpen(true)}
         currentUser={currentUser}
         onLogout={handleLogout}
       />
@@ -129,6 +143,7 @@ const App: React.FC = () => {
 
       {isDocReviewOpen && <DocumentReviewPanel onClose={() => setIsDocReviewOpen(false)} />}
       {isExportOpen && <ExportPanel messages={messages} activeAgent={activeAgent} onClose={() => setIsExportOpen(false)} />}
+      {isSettingsOpen && currentUser && <SettingsPanel user={currentUser} onSave={handleSaveSettings} onClose={() => setIsSettingsOpen(false)} />}
     </div>
   );
 };

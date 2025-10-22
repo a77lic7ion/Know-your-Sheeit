@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { AGENTS } from '../constants';
 import { processUrlForRAG } from '../services/geminiService';
 
-type UploadStatus = 'Processing...' | 'Pending Review' | 'Completed' | 'Failed';
+type UploadStatus = 'Processing...' | 'Pending Review' | 'Completed' | 'Failed' | 'Uploaded';
 
 interface UploadedItem {
   id: number;
   name: string;
   status: UploadStatus;
+  type: 'url' | 'file';
 }
 
 const AgentEducationPanel: React.FC = () => {
@@ -16,6 +17,7 @@ const AgentEducationPanel: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [knowledgeBasePreview, setKnowledgeBasePreview] = useState<object | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUrlSubmit = async () => {
     if (!urlInput.trim() || isProcessing) return;
@@ -28,6 +30,7 @@ const AgentEducationPanel: React.FC = () => {
       id: Date.now(),
       name: urlInput,
       status: 'Processing...',
+      type: 'url',
     };
     
     setUploadedItems(prev => [newItem, ...prev]);
@@ -56,12 +59,35 @@ const AgentEducationPanel: React.FC = () => {
     }
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const files = Array.from(event.target.files);
+      const newItems: UploadedItem[] = files.map(file => ({
+        id: Date.now() + Math.random(), // Add random to avoid collision in loops
+        name: file.name,
+        status: 'Uploaded',
+        type: 'file',
+      }));
+      setUploadedItems(prev => [...newItems, ...prev]);
+      // Reset file input value to allow re-uploading the same file
+      if (event.target) {
+        event.target.value = '';
+      }
+    }
+  };
+
+  const handleBrowseClick = () => {
+    fileInputRef.current?.click();
+  };
+
+
   const getStatusColor = (status: UploadStatus) => {
     switch (status) {
       case 'Processing...': return 'text-yellow-400';
       case 'Completed': return 'text-green-400';
       case 'Failed': return 'text-red-500';
       case 'Pending Review': return 'text-orange-400';
+      case 'Uploaded': return 'text-blue-400';
       default: return 'text-gray-400';
     }
   };
@@ -86,9 +112,26 @@ const AgentEducationPanel: React.FC = () => {
 
             <div className="bg-[#161B22] border border-gray-700 rounded-lg p-6">
               <h3 className="font-semibold text-white mb-4">Upload Documents</h3>
-              <div className="border-2 border-dashed border-gray-600 rounded-lg p-10 text-center">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
+                multiple 
+                accept=".pdf,.doc,.docx,.txt"
+              />
+              <div 
+                className="border-2 border-dashed border-gray-600 rounded-lg p-10 text-center cursor-pointer hover:border-cyan-500 transition-colors"
+                onClick={handleBrowseClick}
+              >
                 <p className="mb-2">Drag and drop files here or click to browse.</p>
-                <button className="bg-cyan-600 text-white px-4 py-2 rounded-md hover:bg-cyan-500 text-sm">Browse Files</button>
+                <button 
+                    type="button" 
+                    onClick={(e) => { e.stopPropagation(); handleBrowseClick(); }}
+                    className="bg-cyan-600 text-white px-4 py-2 rounded-md hover:bg-cyan-500 text-sm"
+                >
+                    Browse Files
+                </button>
               </div>
             </div>
 
@@ -137,7 +180,11 @@ const AgentEducationPanel: React.FC = () => {
                         {uploadedItems.map((item) => (
                           <tr key={item.id} className="border-b border-gray-700 hover:bg-[#21262D]">
                             <th scope="row" className="px-4 py-4 font-medium text-white whitespace-nowrap flex items-center max-w-xs">
-                              <svg className="w-5 h-5 mr-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                              {item.type === 'url' ? (
+                                <svg className="w-5 h-5 mr-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                              ) : (
+                                <svg className="w-5 h-5 mr-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                              )}
                               <span className="truncate" title={item.name}>{item.name}</span>
                             </th>
                             <td className="px-4 py-4">
