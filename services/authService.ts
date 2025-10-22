@@ -57,7 +57,7 @@ export const register = (email: string, password: string): Promise<User> => {
       if (users.some(user => user.email === email)) {
         return reject(new Error('User with this email already exists.'));
       }
-      const newUser: User = { email, apiKeys: {} };
+      const newUser: User = { email, apiKeys: {}, theme: 'dark' };
       saveUsers([...users, newUser]);
       // After registration, create a temporary session
       localStorage.removeItem(LOCAL_SESSION_KEY);

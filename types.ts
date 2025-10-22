@@ -27,6 +27,7 @@ export interface User {
   apiKeys?: {
     [provider: string]: string;
   };
+  theme?: 'light' | 'dark';
 }
 
 // New types for the shared knowledge base

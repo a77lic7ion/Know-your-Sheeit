@@ -24,14 +24,20 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   useEffect(() => {
     const user = authService.getCurrentUser();
     if (user) {
       setCurrentUser(user);
+      setTheme(user.theme || 'dark');
     }
     setAuthReady(true);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     if (currentUser) {
@@ -43,6 +49,7 @@ const App: React.FC = () => {
 
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
+    setTheme(user.theme || 'dark');
   };
 
   const handleLogout = () => {
@@ -51,11 +58,12 @@ const App: React.FC = () => {
     setMessages([]);
   };
 
-  const handleSaveSettings = async (apiKeys: { [provider: string]: string; }) => {
+  const handleSaveSettings = async (settings: { apiKeys: { [provider: string]: string; }, theme: 'light' | 'dark' }) => {
     if (!currentUser) return;
     try {
-        const updatedUser = await authService.updateUser({ ...currentUser, apiKeys });
+        const updatedUser = await authService.updateUser({ ...currentUser, apiKeys: settings.apiKeys, theme: settings.theme });
         setCurrentUser(updatedUser);
+        setTheme(settings.theme);
         setIsSettingsOpen(false);
     } catch (error) {
         console.error("Failed to save settings:", error);
@@ -138,7 +146,7 @@ const App: React.FC = () => {
   };
   
   if (!authReady) {
-    return <div className="flex h-screen bg-[#0D1117] items-center justify-center text-white">Loading...</div>;
+    return <div className="flex h-screen bg-[var(--color-bg-secondary)] items-center justify-center text-[var(--color-text-primary)]">Loading...</div>;
   }
 
   if (!currentUser) {
@@ -146,7 +154,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-[#0D1117] font-sans overflow-hidden">
+    <div className="flex h-screen bg-[var(--color-bg-secondary)] font-sans overflow-hidden">
       <Sidebar 
         agents={AGENTS} 
         activeAgent={activeAgent} 
