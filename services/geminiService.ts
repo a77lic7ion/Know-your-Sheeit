@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 
 // The API key is expected to be available in the environment variables.
@@ -110,5 +111,46 @@ export const generateResponse = async (prompt: string, agentId: string): Promise
   } catch (error) {
     console.error("Gemini API Error:", error);
     throw new Error("Failed to communicate with the AI model.");
+  }
+};
+
+/**
+ * Uses Gemini to reformat a conversation log into a specific format (letter or email).
+ */
+export const formatConversationForExport = async (conversationLog: string, format: 'letter' | 'email', agentName: string): Promise<string> => {
+  if (!ai) {
+    throw new Error("Gemini AI SDK not initialized. Is the API_KEY configured?");
+  }
+  
+  let prompt = '';
+  if (format === 'letter') {
+    prompt = `You are an AI legal assistant. A user wants to draft a formal letter based on their conversation with the ${agentName}.
+    
+    Here is the conversation log:
+    ---
+    ${conversationLog}
+    ---
+    
+    Please reformat this conversation into a clear, professional, and formal letter. The letter should summarize the key legal points discussed and the advice given. Use appropriate letter formatting (e.g., recipient address placeholder, date, salutation, body paragraphs, closing).`;
+  } else { // email
+    prompt = `You are an AI legal assistant. A user wants to compose a professional email based on their conversation with the ${agentName}.
+    
+    Here is the conversation log:
+    ---
+    ${conversationLog}
+    ---
+    
+    Please reformat this conversation into a clear and professional email. The email should summarize the key legal points and advice. Use appropriate email formatting (e.g., Subject line, Salutation, Body, Closing).`;
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Gemini API Error during export formatting:", error);
+    throw new Error("Failed to reformat conversation with the AI model.");
   }
 };

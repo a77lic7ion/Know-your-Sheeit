@@ -13,7 +13,7 @@ export interface Message {
 }
 
 export interface Agent {
-  id: string;
+  id:string;
   name: string;
   shortName: string;
   description: string;
@@ -22,3 +22,7 @@ export interface Agent {
 }
 
 export type PanelType = 'dashboard' | 'education' | 'chat';
+
+export interface User {
+  email: string;
+}

@@ -1,32 +1,53 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Agent, Message, PanelType } from './types';
+import type { Agent, Message, PanelType, User } from './types';
 import { MessageSender } from './types';
 import { AGENTS } from './constants';
 import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
 import AgentEducationPanel from './components/AgentEducationPanel';
-import SettingsPanel from './components/SettingsPanel';
 import DocumentReviewPanel from './components/DocumentReviewPanel';
 import ExportPanel from './components/ExportPanel';
+import Auth from './components/Auth';
 import { generateResponse } from './services/geminiService';
+import * as authService from './services/authService';
 
 const App: React.FC = () => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
   const [activeAgent, setActiveAgent] = useState<Agent>(AGENTS[1]);
   const [messages, setMessages] = useState<Message[]>([]);
   
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDocReviewOpen, setIsDocReviewOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
-
   const [isThinking, setIsThinking] = useState(false);
 
   useEffect(() => {
-    setMessages([
-      { id: 1, text: `Welcome to the ${activeAgent.name}. How can I assist you with your ${activeAgent.shortName.toLowerCase()}-related legal questions today?`, sender: MessageSender.AI }
-    ]);
-  }, [activeAgent]);
+    const user = authService.getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+    }
+    setAuthReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+        setMessages([
+          { id: 1, text: `Welcome to the ${activeAgent.name}. How can I assist you with your ${activeAgent.shortName.toLowerCase()}-related legal questions today?`, sender: MessageSender.AI }
+        ]);
+    }
+  }, [activeAgent, currentUser]);
+
+  const handleLoginSuccess = (user: User) => {
+    setCurrentUser(user);
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setCurrentUser(null);
+    setMessages([]);
+  };
 
   const handleSendMessage = useCallback(async (text: string) => {
     if (!text.trim()) return;
@@ -82,6 +103,14 @@ const App: React.FC = () => {
                 />;
     }
   };
+  
+  if (!authReady) {
+    return <div className="flex h-screen bg-[#0D1117] items-center justify-center text-white">Loading...</div>;
+  }
+
+  if (!currentUser) {
+    return <Auth onLoginSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <div className="flex h-screen bg-[#0D1117] font-sans">
@@ -90,16 +119,16 @@ const App: React.FC = () => {
         activeAgent={activeAgent} 
         onSelectAgent={selectAgent}
         onSelectAdmin={() => setActivePanel('education')}
-        onSelectSettings={() => setIsSettingsOpen(true)}
         activePanel={activePanel}
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
       <main className="flex-1 flex flex-col">
         {renderPanel()}
       </main>
 
-      {isSettingsOpen && <SettingsPanel onClose={() => setIsSettingsOpen(false)} />}
       {isDocReviewOpen && <DocumentReviewPanel onClose={() => setIsDocReviewOpen(false)} />}
-      {isExportOpen && <ExportPanel onClose={() => setIsExportOpen(false)} />}
+      {isExportOpen && <ExportPanel messages={messages} activeAgent={activeAgent} onClose={() => setIsExportOpen(false)} />}
     </div>
   );
 };
