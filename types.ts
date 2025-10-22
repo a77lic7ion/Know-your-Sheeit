@@ -49,3 +49,12 @@ export interface KnowledgeEntry {
 export interface KnowledgeBase {
   [agentId: string]: KnowledgeEntry[];
 }
+
+// New type for Chat History
+export interface Conversation {
+  id: string;
+  agentId: string;
+  messages: Message[];
+  timestamp: string; // ISO string
+  title: string;
+}

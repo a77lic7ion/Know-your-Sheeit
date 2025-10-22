@@ -1,7 +1,7 @@
 
 import React from 'react';
 import type { Agent, PanelType, User } from '../types';
-import { AiIcon, UserIcon, LogoutIcon } from '../constants';
+import { AiIcon, UserIcon, LogoutIcon, HistoryIcon } from '../constants';
 
 interface SidebarProps {
   agents: Agent[];
@@ -9,6 +9,7 @@ interface SidebarProps {
   onSelectAgent: (agent: Agent) => void;
   onSelectAdmin: () => void;
   onOpenSettings: () => void;
+  onOpenHistory: () => void;
   activePanel: PanelType;
   currentUser: User | null;
   onLogout: () => void;
@@ -16,7 +17,7 @@ interface SidebarProps {
   onCloseSidebar: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ agents, activeAgent, onSelectAgent, onSelectAdmin, onOpenSettings, activePanel, currentUser, onLogout, isSidebarOpen, onCloseSidebar }) => {
+const Sidebar: React.FC<SidebarProps> = ({ agents, activeAgent, onSelectAgent, onSelectAdmin, onOpenSettings, onOpenHistory, activePanel, currentUser, onLogout, isSidebarOpen, onCloseSidebar }) => {
   const NavItem: React.FC<{
     agent?: Agent;
     label: string;
@@ -76,6 +77,12 @@ const Sidebar: React.FC<SidebarProps> = ({ agents, activeAgent, onSelectAgent, o
         </nav>
 
         <div className="mt-auto pt-2 space-y-2 flex-shrink-0">
+          <NavItem
+              label="History"
+              isActive={false}
+              onClick={onOpenHistory}
+              icon={HistoryIcon}
+          />
           <NavItem
               label="Agent Education"
               isActive={activePanel === 'education'}

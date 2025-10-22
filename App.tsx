@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Agent, Message, PanelType, User } from './types';
+import type { Agent, Message, PanelType, User, Conversation } from './types';
 import { MessageSender } from './types';
 import { AGENTS } from './constants';
 import Sidebar from './components/Sidebar';
@@ -9,8 +9,11 @@ import DocumentReviewPanel from './components/DocumentReviewPanel';
 import ExportPanel from './components/ExportPanel';
 import Auth from './components/Auth';
 import SettingsPanel from './components/SettingsPanel';
+import HistoryPanel from './components/HistoryPanel';
 import { generateResponse } from './services/geminiService';
 import * as authService from './services/authService';
+import * as chatHistoryService from './services/chatHistoryService';
+
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -18,10 +21,12 @@ const App: React.FC = () => {
   const [activePanel, setActivePanel] = useState<PanelType>('chat');
   const [activeAgent, setActiveAgent] = useState<Agent>(AGENTS[0]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   
   const [isDocReviewOpen, setIsDocReviewOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -38,18 +43,25 @@ const App: React.FC = () => {
     }
     setAuthReady(true);
   }, []);
+  
+  const handleNewChat = useCallback((agentToUse: Agent = activeAgent) => {
+    setCurrentConversationId(null);
+    setMessages([
+      { id: 1, text: `Welcome to the ${agentToUse.name}. How can I assist you with your ${agentToUse.shortName.toLowerCase()}-related legal questions today?`, sender: MessageSender.AI }
+    ]);
+    if (isHistoryOpen) setIsHistoryOpen(false);
+  }, [activeAgent, isHistoryOpen]);
+
+
+  useEffect(() => {
+    if (currentUser && !currentConversationId) {
+        handleNewChat(activeAgent);
+    }
+  }, [currentUser, currentConversationId, activeAgent, handleNewChat]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
-
-  useEffect(() => {
-    if (currentUser) {
-        setMessages([
-          { id: 1, text: `Welcome to the ${activeAgent.name}. How can I assist you with your ${activeAgent.shortName.toLowerCase()}-related legal questions today?`, sender: MessageSender.AI }
-        ]);
-    }
-  }, [activeAgent, currentUser]);
 
   const handleLoginSuccess = (user: User) => {
     const userTheme = user.theme || 'dark';
@@ -62,6 +74,7 @@ const App: React.FC = () => {
     authService.logout();
     setCurrentUser(null);
     setMessages([]);
+    setCurrentConversationId(null);
   };
 
   const handleOpenSettings = () => {
@@ -87,7 +100,7 @@ const App: React.FC = () => {
   };
 
   const handleSendMessage = useCallback(async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || !currentUser) return;
 
     const userMessage: Message = {
       id: Date.now(),
@@ -96,8 +109,9 @@ const App: React.FC = () => {
     };
     
     setMessages(prev => [...prev, userMessage]);
+    setIsThinking(true);
 
-    const geminiApiKey = currentUser?.apiKeys?.gemini;
+    const geminiApiKey = currentUser.apiKeys?.gemini;
     if (!geminiApiKey) {
         const errorMessage: Message = {
             id: Date.now() + 1,
@@ -105,42 +119,72 @@ const App: React.FC = () => {
             sender: MessageSender.AI
         };
         setMessages(prev => [...prev, errorMessage]);
+        setIsThinking(false);
         return;
     }
 
-    setIsThinking(true);
-
+    let aiResponseText: string;
     try {
-      const aiResponseText = await generateResponse(text, activeAgent.id, geminiApiKey);
-      const aiMessage: Message = {
-        id: Date.now() + 1,
-        text: aiResponseText,
-        sender: MessageSender.AI
-      };
-      setMessages(prev => [...prev, aiMessage]);
+      aiResponseText = await generateResponse(text, activeAgent.id, geminiApiKey);
     } catch (error) {
       console.error("Failed to get AI response:", error);
-      const errorMessageText = error instanceof Error ? error.message : "Sorry, I encountered an error. Please try again.";
-      const errorMessage: Message = {
-        id: Date.now() + 1,
-        text: errorMessageText,
-        sender: MessageSender.AI
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsThinking(false);
+      aiResponseText = error instanceof Error ? error.message : "Sorry, I encountered an error. Please try again.";
     }
-  }, [activeAgent.id, currentUser]);
+
+    const aiMessage: Message = {
+      id: Date.now() + 1,
+      text: aiResponseText,
+      sender: MessageSender.AI
+    };
+
+    let savedConversation: Conversation | null = null;
+
+    setMessages(prevMessages => {
+        const finalMessages = [...prevMessages, aiMessage];
+        const convId = currentConversationId || `conv-${Date.now()}`;
+        
+        savedConversation = {
+            id: convId,
+            agentId: activeAgent.id,
+            messages: finalMessages,
+            timestamp: new Date().toISOString(),
+            title: finalMessages.find(m => m.sender === MessageSender.USER)?.text.substring(0, 50) || 'New Conversation'
+        };
+
+        if (!currentConversationId) {
+            setCurrentConversationId(convId);
+        }
+
+        return finalMessages;
+    });
+
+    setIsThinking(false);
+    
+    if (savedConversation) {
+        await chatHistoryService.saveConversation(currentUser.email, savedConversation);
+    }
+
+  }, [activeAgent.id, currentUser, currentConversationId]);
 
   const selectAgent = (agent: Agent) => {
     setActiveAgent(agent);
     setActivePanel('chat');
-    setIsSidebarOpen(false); // Close sidebar on selection
+    setIsSidebarOpen(false); 
+    handleNewChat(agent);
   }
+  
+  const handleSelectConversation = (conversation: Conversation) => {
+    const agent = AGENTS.find(a => a.id === conversation.agentId) || AGENTS[0];
+    setActiveAgent(agent);
+    setMessages(conversation.messages);
+    setCurrentConversationId(conversation.id);
+    setActivePanel('chat');
+    setIsHistoryOpen(false);
+  };
 
   const selectAdminPanel = () => {
     setActivePanel('education');
-    setIsSidebarOpen(false); // Close sidebar on selection
+    setIsSidebarOpen(false);
   }
 
   const renderPanel = () => {
@@ -181,6 +225,7 @@ const App: React.FC = () => {
         onSelectAdmin={selectAdminPanel}
         activePanel={activePanel}
         onOpenSettings={handleOpenSettings}
+        onOpenHistory={() => setIsHistoryOpen(true)}
         currentUser={currentUser}
         onLogout={handleLogout}
         isSidebarOpen={isSidebarOpen}
@@ -199,6 +244,14 @@ const App: React.FC = () => {
           onClose={handleCloseSettings}
           currentTheme={theme}
           onThemeChange={setTheme}
+        />
+      )}
+      {isHistoryOpen && currentUser && (
+        <HistoryPanel
+          currentUser={currentUser}
+          onClose={() => setIsHistoryOpen(false)}
+          onSelectConversation={handleSelectConversation}
+          onNewChat={() => handleNewChat()}
         />
       )}
     </div>
