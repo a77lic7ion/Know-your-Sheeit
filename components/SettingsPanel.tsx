@@ -56,9 +56,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onClose }) => {
             <h3 className="text-lg font-medium text-gray-200">Preferences</h3>
             <label className="block text-sm font-medium text-gray-400 mb-1">Provider Priority</label>
             <select className="w-full bg-[#2d333a] border border-gray-600 rounded-md p-2 text-gray-200 focus:ring-cyan-500 focus:border-cyan-500">
-              <option>OpenAI > Gemini > Claude</option>
-              <option>Gemini > OpenAI > Claude</option>
-              <option>Claude > Gemini > OpenAI</option>
+              <option>OpenAI &gt; Gemini &gt; Claude</option>
+              <option>Gemini &gt; OpenAI &gt; Claude</option>
+              <option>Claude &gt; Gemini &gt; OpenAI</option>
             </select>
           </div>
         </div>
