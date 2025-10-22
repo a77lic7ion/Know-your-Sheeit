@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Agent, Message, PanelType, User } from './types';
 import { MessageSender } from './types';
@@ -71,12 +70,24 @@ const App: React.FC = () => {
       text,
       sender: MessageSender.USER
     };
-
+    
     setMessages(prev => [...prev, userMessage]);
+
+    const geminiApiKey = currentUser?.apiKeys?.gemini;
+    if (!geminiApiKey) {
+        const errorMessage: Message = {
+            id: Date.now() + 1,
+            text: "Gemini API key not found. Please add it in the Settings panel to chat with an agent.",
+            sender: MessageSender.AI
+        };
+        setMessages(prev => [...prev, errorMessage]);
+        return;
+    }
+
     setIsThinking(true);
 
     try {
-      const aiResponseText = await generateResponse(text, activeAgent.id);
+      const aiResponseText = await generateResponse(text, activeAgent.id, geminiApiKey);
       const aiMessage: Message = {
         id: Date.now() + 1,
         text: aiResponseText,
@@ -85,16 +96,17 @@ const App: React.FC = () => {
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error("Failed to get AI response:", error);
+      const errorMessageText = error instanceof Error ? error.message : "Sorry, I encountered an error. Please try again.";
       const errorMessage: Message = {
         id: Date.now() + 1,
-        text: "Sorry, I encountered an error. Please try again.",
+        text: errorMessageText,
         sender: MessageSender.AI
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsThinking(false);
     }
-  }, [activeAgent.id]);
+  }, [activeAgent.id, currentUser]);
 
   const selectAgent = (agent: Agent) => {
     setActiveAgent(agent);
@@ -110,7 +122,7 @@ const App: React.FC = () => {
   const renderPanel = () => {
     switch (activePanel) {
       case 'education':
-        return <AgentEducationPanel />;
+        return <AgentEducationPanel currentUser={currentUser} />;
       case 'chat':
       default:
         return <ChatWindow 
@@ -152,7 +164,7 @@ const App: React.FC = () => {
       </main>
 
       {isDocReviewOpen && <DocumentReviewPanel onClose={() => setIsDocReviewOpen(false)} />}
-      {isExportOpen && <ExportPanel messages={messages} activeAgent={activeAgent} onClose={() => setIsExportOpen(false)} />}
+      {isExportOpen && currentUser && <ExportPanel messages={messages} activeAgent={activeAgent} onClose={() => setIsExportOpen(false)} currentUser={currentUser} />}
       {isSettingsOpen && currentUser && <SettingsPanel user={currentUser} onSave={handleSaveSettings} onClose={() => setIsSettingsOpen(false)} />}
     </div>
   );

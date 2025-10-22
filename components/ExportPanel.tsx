@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import type { Agent, Message } from '../types';
+import type { Agent, Message, User } from '../types';
 import { MessageSender } from '../types';
 import { formatConversationForExport } from '../services/geminiService';
 
@@ -9,9 +8,10 @@ interface ExportPanelProps {
   onClose: () => void;
   messages: Message[];
   activeAgent: Agent;
+  currentUser: User;
 }
 
-const ExportPanel: React.FC<ExportPanelProps> = ({ onClose, messages, activeAgent }) => {
+const ExportPanel: React.FC<ExportPanelProps> = ({ onClose, messages, activeAgent, currentUser }) => {
   const [activeTab, setActiveTab] = useState('pdf');
   const [exportContent, setExportContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,8 +31,14 @@ const ExportPanel: React.FC<ExportPanelProps> = ({ onClose, messages, activeAgen
         setExportContent(chatLog);
         setIsLoading(false);
       } else if (activeTab === 'letter' || activeTab === 'email') {
+        const geminiApiKey = currentUser?.apiKeys?.gemini;
+        if (!geminiApiKey) {
+            setExportContent('Gemini API key not found. Please add it in the Settings panel to use this feature.');
+            setIsLoading(false);
+            return;
+        }
         try {
-          const formattedContent = await formatConversationForExport(chatLog, activeTab as 'letter' | 'email', activeAgent.name);
+          const formattedContent = await formatConversationForExport(chatLog, activeTab as 'letter' | 'email', activeAgent.name, geminiApiKey);
           setExportContent(formattedContent);
         } catch (error) {
           console.error(error);
@@ -44,7 +50,7 @@ const ExportPanel: React.FC<ExportPanelProps> = ({ onClose, messages, activeAgen
     };
 
     generateContent();
-  }, [activeTab, messages, activeAgent]);
+  }, [activeTab, messages, activeAgent, currentUser]);
 
   const handleDownload = () => {
     const blob = new Blob([exportContent], { type: 'text/plain;charset=utf-8' });

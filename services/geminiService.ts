@@ -1,13 +1,23 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 
-// The API key is expected to be available in the environment variables.
-let ai: GoogleGenAI;
-try {
-  ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-} catch (error) {
-  console.error("Failed to initialize GoogleGenAI. Make sure API_KEY is set in the environment.", error);
-}
+/**
+ * Creates and returns an initialized GoogleGenAI client.
+ * @param apiKey The user's Gemini API key.
+ * @returns An instance of GoogleGenAI.
+ * @throws An error if the API key is missing or invalid.
+ */
+const getAiClient = (apiKey: string): GoogleGenAI => {
+  if (!apiKey) {
+    throw new Error("Gemini API key is missing. Please configure it in Settings.");
+  }
+  try {
+    return new GoogleGenAI({ apiKey });
+  } catch (error) {
+    console.error("Failed to initialize GoogleGenAI:", error);
+    throw new Error("Failed to initialize Gemini AI SDK. The API key might be invalid.");
+  }
+};
+
 
 const KNOWLEDGE_BASE_SCHEMA = {
   type: Type.OBJECT,
@@ -47,10 +57,8 @@ const KNOWLEDGE_BASE_SCHEMA = {
  * Processes a URL to extract legal information and structure it for a knowledge base.
  * This simulates RAG by asking the model to act as if it has fetched the URL content.
  */
-export const processUrlForRAG = async (url: string): Promise<object> => {
-  if (!ai) {
-    throw new Error("Gemini AI SDK not initialized. Is the API_KEY configured?");
-  }
+export const processUrlForRAG = async (url: string, apiKey: string): Promise<object> => {
+  const ai = getAiClient(apiKey);
   console.log(`Processing URL for RAG: ${url}`);
   
   const prompt = `You are an AI assistant that structures web content for a legal knowledge base. A user has submitted this URL: ${url}.
@@ -84,10 +92,8 @@ export const processUrlForRAG = async (url: string): Promise<object> => {
 /**
  * Calls the Gemini API to get a response for a user's query.
  */
-export const generateResponse = async (prompt: string, agentId: string): Promise<string> => {
-  if (!ai) {
-    throw new Error("Gemini AI SDK not initialized. Is the API_KEY configured?");
-  }
+export const generateResponse = async (prompt: string, agentId: string, apiKey: string): Promise<string> => {
+  const ai = getAiClient(apiKey);
   console.log(`Calling Gemini for agent "${agentId}" with prompt: "${prompt}"`);
 
   const systemPrompts: { [key: string]: string } = {
@@ -117,10 +123,8 @@ export const generateResponse = async (prompt: string, agentId: string): Promise
 /**
  * Uses Gemini to reformat a conversation log into a specific format (letter or email).
  */
-export const formatConversationForExport = async (conversationLog: string, format: 'letter' | 'email', agentName: string): Promise<string> => {
-  if (!ai) {
-    throw new Error("Gemini AI SDK not initialized. Is the API_KEY configured?");
-  }
+export const formatConversationForExport = async (conversationLog: string, format: 'letter' | 'email', agentName: string, apiKey: string): Promise<string> => {
+  const ai = getAiClient(apiKey);
   
   let prompt = '';
   if (format === 'letter') {

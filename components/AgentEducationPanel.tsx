@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { AGENTS } from '../constants';
 import { processUrlForRAG } from '../services/geminiService';
+import type { User } from '../types';
 
 type UploadStatus = 'Processing...' | 'Pending Review' | 'Completed' | 'Failed' | 'Uploaded';
 
@@ -11,7 +12,11 @@ interface UploadedItem {
   type: 'url' | 'file';
 }
 
-const AgentEducationPanel: React.FC = () => {
+interface AgentEducationPanelProps {
+  currentUser: User | null;
+}
+
+const AgentEducationPanel: React.FC<AgentEducationPanelProps> = ({ currentUser }) => {
   const [uploadedItems, setUploadedItems] = useState<UploadedItem[]>([]);
   const [urlInput, setUrlInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -22,6 +27,13 @@ const AgentEducationPanel: React.FC = () => {
   const handleUrlSubmit = async () => {
     if (!urlInput.trim() || isProcessing) return;
 
+    const geminiApiKey = currentUser?.apiKeys?.gemini;
+    if (!geminiApiKey) {
+      setError("Gemini API key not found. Please add it in the Settings panel before training an agent.");
+      setKnowledgeBasePreview({ error: "Gemini API key not found. Please add it in the Settings panel before training an agent." });
+      return;
+    }
+    
     setIsProcessing(true);
     setError(null);
     setKnowledgeBasePreview(null);
@@ -38,7 +50,7 @@ const AgentEducationPanel: React.FC = () => {
     setUrlInput('');
 
     try {
-      const result = await processUrlForRAG(submittedUrl);
+      const result = await processUrlForRAG(submittedUrl, geminiApiKey);
       setKnowledgeBasePreview(result);
       setUploadedItems(prev =>
         prev.map(item =>
