@@ -98,8 +98,8 @@ export const generateResponse = async (prompt: string, agentId: string, apiKey: 
   const ai = getAiClient(apiKey);
   console.log(`Calling Gemini for agent "${agentId}" with prompt: "${prompt}"`);
 
-  // RAG: Retrieve knowledge for the agent
-  const agentKnowledge = knowledgeBaseService.getKnowledgeForAgent(agentId);
+  // RAG: Retrieve knowledge for the agent from Vercel KV
+  const agentKnowledge = await knowledgeBaseService.getKnowledgeForAgent(agentId);
   let knowledgeContext = "No specific knowledge base context available for this query.";
   
   if (agentKnowledge.length > 0) {

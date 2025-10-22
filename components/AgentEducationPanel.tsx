@@ -58,10 +58,17 @@ const AgentEducationPanel: React.FC<AgentEducationPanelProps> = ({ currentUser }
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedAgentId, setSelectedAgentId] = useState<string>(AGENTS[0].id);
-  const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBase>(knowledgeBaseService.getKnowledgeBase());
+  const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBase>({});
+  const [isLoadingKB, setIsLoadingKB] = useState(true);
 
   useEffect(() => {
-    setKnowledgeBase(knowledgeBaseService.getKnowledgeBase());
+    const fetchKB = async () => {
+        setIsLoadingKB(true);
+        const kb = await knowledgeBaseService.getKnowledgeBase();
+        setKnowledgeBase(kb);
+        setIsLoadingKB(false);
+    }
+    fetchKB();
   }, []);
 
   const handleUrlSubmit = async () => {
@@ -112,27 +119,7 @@ const AgentEducationPanel: React.FC<AgentEducationPanelProps> = ({ currentUser }
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      const files = Array.from(event.target.files);
-      const newItems: UploadedItem[] = files.map(file => ({
-        id: Date.now() + Math.random(),
-        name: file.name,
-        status: 'Uploaded',
-        type: 'file',
-      }));
-      setUploadedItems(prev => [...newItems, ...prev]);
-      if (event.target) {
-        event.target.value = '';
-      }
-    }
-  };
-
-  const handleBrowseClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleApprove = () => {
+  const handleApprove = async () => {
     if (!knowledgeBasePreview || !currentUser) return;
     const lastProcessedItem = uploadedItems.find(item => item.status === 'Completed');
     if (!lastProcessedItem) {
@@ -149,8 +136,8 @@ const AgentEducationPanel: React.FC<AgentEducationPanelProps> = ({ currentUser }
         approvedAt: new Date().toISOString()
     };
     
-    knowledgeBaseService.addKnowledgeEntry(newEntry);
-    setKnowledgeBase(knowledgeBaseService.getKnowledgeBase()); // Refresh state
+    await knowledgeBaseService.addKnowledgeEntry(newEntry);
+    setKnowledgeBase(await knowledgeBaseService.getKnowledgeBase()); // Refresh state
     setKnowledgeBasePreview(null);
     setUploadedItems(prev => prev.filter(item => item.id !== lastProcessedItem.id));
     setSuccessMessage("Knowledge base approved and added successfully!");
@@ -162,18 +149,6 @@ const AgentEducationPanel: React.FC<AgentEducationPanelProps> = ({ currentUser }
     const lastProcessedItem = uploadedItems.find(item => item.status === 'Completed');
     if(lastProcessedItem) {
         setUploadedItems(prev => prev.filter(item => item.id !== lastProcessedItem.id));
-    }
-  };
-
-
-  const getStatusColor = (status: UploadStatus) => {
-    switch (status) {
-      case 'Processing...': return 'text-yellow-400';
-      case 'Completed': return 'text-green-400';
-      case 'Failed': return 'text-red-500';
-      case 'Pending Review': return 'text-orange-400';
-      case 'Uploaded': return 'text-blue-400';
-      default: return 'text-gray-400';
     }
   };
 
@@ -239,7 +214,9 @@ const AgentEducationPanel: React.FC<AgentEducationPanelProps> = ({ currentUser }
             
              <div className="bg-[#161B22] border border-gray-700 rounded-lg p-6">
               <h3 className="font-semibold text-white mb-4">Approved Knowledge Sources for {AGENTS.find(a=>a.id === selectedAgentId)?.name}</h3>
-              {agentKnowledge.length > 0 ? (
+              {isLoadingKB ? (
+                <div className="text-center text-gray-500 py-4">Loading knowledge base...</div>
+              ) : agentKnowledge.length > 0 ? (
                   <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                       {agentKnowledge.map(entry => <KnowledgeBaseItem key={entry.id} entry={entry} />)}
                   </div>
