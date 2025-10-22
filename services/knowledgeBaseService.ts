@@ -9,7 +9,9 @@ const KNOWLEDGE_BASE_KEY = 'legal_ai_shared_knowledge_base';
  */
 export const getKnowledgeBase = async (): Promise<KnowledgeBase> => {
   try {
+    console.log("Attempting to get knowledge base from KV store...");
     const storedData = await kv.get<KnowledgeBase>(KNOWLEDGE_BASE_KEY);
+    console.log("Retrieved raw data from KV store:", storedData);
     return storedData || {};
   } catch (error) {
     console.error("Failed to parse knowledge base from Vercel KV:", error);
@@ -23,7 +25,12 @@ export const getKnowledgeBase = async (): Promise<KnowledgeBase> => {
  */
 const saveKnowledgeBase = async (knowledgeBase: KnowledgeBase): Promise<void> => {
   try {
+    console.log("Saving knowledge base to KV store:", JSON.stringify(knowledgeBase, null, 2));
     await kv.set(KNOWLEDGE_BASE_KEY, knowledgeBase);
+    console.log("Knowledge base save call completed.");
+    // Verify the write operation
+    const verify = await kv.get(KNOWLEDGE_BASE_KEY);
+    console.log("Verification read from KV store:", verify);
   } catch (error) {
     console.error("Failed to save knowledge base to Vercel KV:", error);
   }

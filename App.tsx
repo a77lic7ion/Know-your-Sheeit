@@ -188,6 +188,19 @@ const App: React.FC = () => {
   }
 
   const renderPanel = () => {
+    if (activePanel === 'education' && currentUser?.email !== 'shaunwg@outlook.com') {
+      // Fallback to chat window if a non-admin user tries to access the education panel.
+      return <ChatWindow 
+                activeAgent={activeAgent} 
+                messages={messages} 
+                onSendMessage={handleSendMessage} 
+                isThinking={isThinking}
+                onOpenDocReview={() => setIsDocReviewOpen(true)}
+                onOpenExport={() => setIsExportOpen(true)}
+                onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+              />;
+    }
+    
     switch (activePanel) {
       case 'education':
         return <AgentEducationPanel 

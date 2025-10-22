@@ -83,12 +83,14 @@ const Sidebar: React.FC<SidebarProps> = ({ agents, activeAgent, onSelectAgent, o
               onClick={onOpenHistory}
               icon={HistoryIcon}
           />
-          <NavItem
-              label="Agent Education"
-              isActive={activePanel === 'education'}
-              onClick={onSelectAdmin}
-              icon={({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 3.104v5.62c0 .363.188.706.505.905l4.5 2.813M9.75 15.104v5.62c0 .363.188.706.505.905l4.5 2.813M4.5 8.354l4.5-2.813m0 11.25l-4.5-2.813m15-5.625v5.62a2.25 2.25 0 01-.505.905l-4.5 2.813m4.5-11.25l-4.5-2.813a2.25 2.25 0 00-2.016 0L9.25 5.541m7.5 11.25l-4.5-2.813" /></svg>}
-          />
+          {currentUser?.email === 'shaunwg@outlook.com' && (
+            <NavItem
+                label="Agent Education"
+                isActive={activePanel === 'education'}
+                onClick={onSelectAdmin}
+                icon={({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 3.104v5.62c0 .363.188.706.505.905l4.5 2.813M9.75 15.104v5.62c0 .363.188.706.505.905l4.5 2.813M4.5 8.354l4.5-2.813m0 11.25l-4.5-2.813m15-5.625v5.62a2.25 2.25 0 01-.505.905l-4.5 2.813m4.5-11.25l-4.5-2.813a2.25 2.25 0 00-2.016 0L9.25 5.541m7.5 11.25l-4.5-2.813" /></svg>}
+            />
+          )}
           <NavItem
               label="Settings"
               isActive={false}
